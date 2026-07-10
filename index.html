@@ -1,0 +1,745 @@
+<!-- © CL4D INFO 2026 — All rights reserved -->
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CS2 Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font: 'Inter', sans-serif;
+      --gap: 7px;
+      --r-outer: 28px;
+      --r-inner: 22px;
+    }
+
+    html {
+      min-height: 100%;
+      /* dark indigo at top fading down into white, like the reference */
+      background: linear-gradient(180deg, #1a1f6e 0%, #2a3296 8%, #6b74c4 17%, #aab0e0 24%, #fafbfd 34%, #fafbfd 100%);
+      background-attachment: fixed;
+      background-size: 100% 100vh;
+      background-repeat: no-repeat;
+    }
+    body {
+      min-height: 100%;
+      background: transparent;
+      font-family: var(--font);
+      color: #1c1c1c;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 28px 18px 16px; max-width: 480px; margin: 0 auto;
+      position: relative;
+    }
+    .header-left { display: flex; align-items: center; gap: 8px; position: relative; }
+    .header-title { font-size: 27px; font-weight: 800; letter-spacing: -0.5px; color: #fafbfd; }
+
+
+    /* ── GRID ── */
+    .grid-wrapper { max-width: 480px; margin: 0 auto; padding: 0 14px 50px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+    .card-wrap { position: relative; }
+    .card-wrap.card-featured { grid-row: span 2; }
+
+    /* ── CARD — true liquid glass, no color fill ── */
+    .card {
+      border-radius: var(--r-inner);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 148px;
+      padding: 16px 15px 15px;
+      position: relative;
+      cursor: pointer;
+      transition: transform .18s cubic-bezier(.34,1.4,.64,1), box-shadow .18s;
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.50);
+      background: rgba(255,255,255,0.28);
+      box-shadow:
+        0 8px 24px -8px rgba(20,20,40,0.16),
+        inset 0 1px 0 rgba(255,255,255,0.55);
+    }
+    .card-wrap.card-featured .card { height: 100%; }
+
+    .card:hover  { transform: scale(1.03); background: rgba(255,255,255,0.36); box-shadow: 0 14px 32px -8px rgba(20,20,40,0.20), inset 0 1px 0 rgba(255,255,255,0.6); }
+    .card:active { transform: scale(0.97); }
+
+    /* glossy diagonal sheen, very subtle */
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card > * { position: relative; z-index: 1; }
+
+    /* ── CARD TOP ── */
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+    .card-labels { display: flex; flex-direction: column; gap: 2px; }
+    .card-title { font-size: 16px; font-weight: 700; color: #1c1c1c; line-height: 1.2; }
+    .card-featured .card-title { font-size: 20px; font-weight: 800; }
+    .card-subtitle { font-size: 12px; font-weight: 500; color: rgba(28,28,28,0.55); }
+    .card-icon { flex-shrink: 0; }
+    .card-icon svg { width: 28px; height: 28px; stroke: #1c1c1c; }
+
+    .card-lock {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 600; color: rgba(28,28,28,0.45);
+      text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px;
+    }
+    .card-lock svg { width: 10px; height: 10px; stroke: rgba(28,28,28,0.45); }
+
+    /* ── CARD BOTTOM ── */
+    .card-bottom { margin-top: auto; padding-top: 10px; }
+    .card-value-label { font-size: 11px; font-weight: 600; color: rgba(28,28,28,0.45); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; transition: opacity .25s; }
+    .card-value { font-size: 46px; font-weight: 800; letter-spacing: -2px; color: #1c1c1c; line-height: 1; overflow: hidden; position: relative; }
+    .card-value-inner {
+      display: block;
+      transition: transform .22s cubic-bezier(.4,0,.2,1);
+    }
+    .card-value-label.label-fade { opacity: 0; }
+
+    /* alt: short tagline footer for cards without a meaningful number */
+    .card-tagline { font-size: 13px; font-weight: 600; color: rgba(28,28,28,0.55); line-height: 1.35; max-width: 130px; }
+
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      z-index: 100; align-items: flex-end; justify-content: center; padding: 0 0 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s ease;
+      display: flex;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal {
+      background: #fafbfd;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 28px 28px 22px 22px;
+      width: 100%; max-width: 480px; padding: 10px 22px 30px;
+      box-shadow: 0 -2px 30px rgba(0,0,0,0.12);
+      transform: translateY(50px); opacity: 0;
+      transition: transform .28s cubic-bezier(.34,1.4,.64,1), opacity .22s ease;
+    }
+    .modal-overlay.open .modal {
+      transform: translateY(0); opacity: 1;
+    }
+    .modal-handle { width: 38px; height: 4px; border-radius: 2px; background: rgba(0,0,0,0.12); margin: 0 auto 20px; }
+    .modal-title { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; color: #1c1c1c; margin-bottom: 12px; }
+    .modal-content { font-size: 13px; line-height: 1.72; color: #1c1c1c; white-space: pre-wrap; font-family: var(--font); margin: 0; }
+    .modal-close-btn {
+      margin-top: 22px; width: 100%; padding: 14px; border-radius: 16px; border: none;
+      background: rgba(0,0,0,0.06); color: #1c1c1c; font-family: var(--font);
+      font-size: 15px; font-weight: 600; cursor: pointer; transition: background .15s;
+    }
+    .modal-close-btn:hover { background: rgba(0,0,0,0.10); }
+
+    /* ── SPLIT CARD — two halves inside one card-wrap ── */
+    .card-split {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      height: 100%;
+    }
+    .card-half {
+      flex: 1;
+      border-radius: var(--r-inner);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 13px 14px 12px;
+      position: relative;
+      cursor: pointer;
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.50);
+      background: rgba(255,255,255,0.28);
+      box-shadow: 0 4px 12px -4px rgba(20,20,40,0.12), inset 0 1px 0 rgba(255,255,255,0.55);
+      transition: transform .18s cubic-bezier(.34,1.4,.64,1), background .18s;
+    }
+    .card-half:hover  { background: rgba(255,255,255,0.38); transform: scale(1.02); }
+    .card-half:active { transform: scale(0.98); }
+    .card-half::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0) 50%);
+      pointer-events: none;
+    }
+    .card-half > * { position: relative; z-index: 1; }
+    .card-half-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+    .card-half-top svg { width: 22px; height: 22px; stroke: #1c1c1c; flex-shrink: 0; }
+    .card-half-title { font-size: 14px; font-weight: 700; color: #1c1c1c; }
+    .card-half-sub { font-size: 11px; font-weight: 500; color: rgba(28,28,28,0.50); margin-top: 1px; }
+
+    /* ── DONATE MODAL ── */
+    .donate-modal { display: flex; flex-direction: column; gap: 14px; }
+    .donate-desc {
+      font-size: 13.5px; line-height: 1.65; color: rgba(28,28,28,0.60);
+    }
+    .donate-methods { display: flex; flex-direction: column; gap: 8px; }
+    .donate-btn {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 16px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(28,28,28,0.10);
+      background: rgba(28,28,28,0.04);
+      cursor: pointer; text-decoration: none;
+      transition: background .15s, border-color .15s;
+    }
+    .donate-btn:hover { background: rgba(28,28,28,0.08); border-color: rgba(28,28,28,0.18); }
+    .donate-btn-left { display: flex; align-items: center; gap: 12px; }
+    .donate-btn-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .donate-btn-label { font-size: 14px; font-weight: 700; color: #1c1c1c; }
+    .donate-btn-sub   { font-size: 11px; font-weight: 500; color: rgba(28,28,28,0.45); margin-top: 1px; }
+    .donate-btn-arrow svg { width: 16px; height: 16px; stroke: rgba(28,28,28,0.30); }
+
+    /* ── SPLASH SCREEN ── */
+    #splash {
+      position: fixed; inset: 0; z-index: 999;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: linear-gradient(180deg, #1a1f6e 0%, #2a3296 30%, #6b74c4 65%, #fafbfd 100%);
+      transition: opacity .6s ease;
+    }
+    #splash.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #splash.done { display: none; }
+
+    .splash-logo {
+      font-family: var(--font);
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: #fafbfd;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: splashIn .7s cubic-bezier(.34,1.4,.64,1) .3s forwards;
+      position: relative; z-index: 1;
+    }
+    .splash-sub {
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(250,251,253,0.55);
+      margin-top: 6px;
+      opacity: 0;
+      animation: splashIn .6s ease .6s forwards;
+      position: relative; z-index: 1;
+    }
+    .splash-dots {
+      display: flex; gap: 6px; margin-top: 48px;
+      opacity: 0;
+      animation: splashIn .5s ease .8s forwards;
+      position: relative; z-index: 1;
+    }
+    .splash-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(250,251,253,0.35);
+      animation: dotPulse 1.2s ease infinite;
+    }
+    .splash-dot:nth-child(2) { animation-delay: .2s; }
+    .splash-dot:nth-child(3) { animation-delay: .4s; }
+
+    @keyframes splashIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes dotPulse {
+      0%, 100% { background: rgba(250,251,253,0.25); transform: scale(1); }
+      50%       { background: rgba(250,251,253,0.80); transform: scale(1.3); }
+    }
+
+    /* main content hidden until splash done */
+    #main-content {
+      opacity: 0;
+      transition: opacity .6s ease;
+    }
+    #main-content.visible {
+      opacity: 1;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- SPLASH -->
+  <div id="splash">
+    <div class="splash-logo">CL4D INFO</div>
+    <div class="splash-sub">Loading...</div>
+    <div class="splash-dots">
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+    </div>
+  </div>
+
+  <div id="main-content">
+  <header class="header">
+    <div class="header-left">
+      <span class="header-title">CL4D INFO</span>
+    </div>
+  </header>
+
+  <main class="grid-wrapper">
+    <div class="grid">
+
+      <!-- About Me — featured -->
+      <div class="card-wrap c-blue card-featured"
+        data-title="About Me"
+        data-desc="Привіт! Я гравець у CS2, який цікавиться налаштуваннями гри, серверами та мап-дизайном.
+
+Зараз працюю над:
+- Власним game-сервером Norden
+- Мапою dust2_remake у Hammer
+- Цим сайтом з гайдами по CS2
+
+ELO: 5 430
+Основна роль: AWP / IGL
+Улюблена мапа: Mirage">
+        <div class="card">
+          <div class="card-top">
+            <div class="card-labels">
+              <span class="card-title">About Me</span>
+              <span class="card-subtitle">Про мене</span>
+            </div>
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+              </svg>
+            </div>
+          </div>
+          <div class="card-bottom">
+            <div class="card-value-label">ELO</div>
+            <div class="card-value">5430</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Binds -->
+      <div class="card-wrap c-orange"
+        data-title="Binds"
+        data-desc='Прив'"'"'язка дій до клавіш.
+
+bind "mwheeldown" "+jump"
+bind "mwheelup" "+jump"
+bind "space" "+jump"
+bind "q" "lastinv"
+bind "f" "use weapon_flashbang"
+bind "z" "use weapon_smokegrenade"
+bind "x" "use weapon_molotov; use weapon_incgrenade"
+bind "c" "use weapon_decoy"
+
+Для збереження використовуй autoexec.cfg у папці cfg.'>
+        <div class="card">
+          <div class="card-top">
+            <div class="card-labels">
+              <span class="card-title">Binds</span>
+              <span class="card-subtitle">Прив'язка клавіш</span>
+            </div>
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="13" rx="2"/>
+                <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M18 14h.01M10 14h4"/>
+              </svg>
+            </div>
+          </div>
+          <div class="card-bottom">
+            <div class="card-value-label">Клавіш</div>
+            <div class="card-value">8</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ViewModel -->
+      <div class="card-wrap c-blue" id="vm-card"
+        data-title="ViewModel"
+        data-desc="Налаштування положення зброї в руках гравця.
+
+viewmodel_fov 68
+viewmodel_offset_x 2.5
+viewmodel_offset_y 2.0
+viewmodel_offset_z -2.0
+
+Рекомендований фов: 60–68
+Більший offset_x = зброя правіше/лівіше
+Параметри зберігаються в autoexec.cfg">
+        <div class="card">
+          <div class="card-top">
+            <div class="card-labels">
+              <span class="card-title">ViewModel</span>
+              <span class="card-subtitle">Положення зброї</span>
+            </div>
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 11l18-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
+              </svg>
+            </div>
+          </div>
+          <div class="card-bottom">
+            <div class="card-value-label" id="vm-label">FOV</div>
+            <div class="card-value"><span class="card-value-inner" id="vm-value">68</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donate -->
+      <div class="card-wrap c-yellow"
+        data-title="Donate"
+        data-desc="Підтримай розвиток проєкту та сервера.
+
+Будь-яка сума допомагає покривати витрати на хостинг, домен та подальший розвиток.
+
+Способи підтримки:
+- Donatello
+- Patreon
+- Криптовалюта (USDT)
+
+Дякуємо за підтримку! Кожен донат наближає нас до нових фіч.">
+        <div class="card">
+          <div class="card-top">
+            <div class="card-labels">
+              <span class="card-title">Donate</span>
+              <span class="card-subtitle">Зроби свій внесок</span>
+            </div>
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="card-bottom">
+            <div class="card-tagline">Donatello, Patreon, USDT</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Crosshair -->
+      <div class="card-wrap c-teal" id="ch-card"
+        data-title="Crosshair"
+        data-desc="Налаштування прицілу.
+
+cl_crosshairsize 1.0
+cl_crosshairthickness 1.0
+cl_crosshairgap -4.0
+cl_crosshair_drawoutline 1
+cl_crosshair_outlinethickness 1.0
+cl_crosshaircolor 5
+cl_crosshaircolor_r 0
+cl_crosshaircolor_g 255
+cl_crosshaircolor_b 0
+cl_crosshairdot 0
+cl_crosshairalpha 255
+
+Або скопіюй код прицілу через команду: cl_crosshair_copycode">
+        <div class="card">
+          <div class="card-top">
+            <div class="card-labels">
+              <span class="card-title">Crosshair</span>
+              <span class="card-subtitle">Приціл</span>
+            </div>
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <line x1="12" y1="3" x2="12" y2="7"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+                <line x1="3" y1="12" x2="7" y2="12"/>
+                <line x1="17" y1="12" x2="21" y2="12"/>
+              </svg>
+            </div>
+          </div>
+          <div class="card-bottom">
+            <div class="card-value-label" id="ch-label">LENGTH</div>
+            <div class="card-value"><span class="card-value-inner" id="ch-value">1.0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stream Schedule -->
+      <div class="card-wrap"
+        data-title="Schedule"
+        data-desc="Розклад стримів ще формується.
+
+Слідкуй за оновленнями в Telegram-каналі або на Twitch — там завжди є анонси наступних стримів.
+
+Орієнтовно: вечірні стріми по CS2, іноді з переглядами демок та розбором раундів.">
+        <div class="card">
+          <div class="card-top">
+            <div class="card-labels">
+              <div class="card-lock">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                Незабаром
+              </div>
+              <span class="card-title">Schedule</span>
+              <span class="card-subtitle">Розклад стримів</span>
+            </div>
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+          </div>
+          <div class="card-bottom">
+            <div class="card-tagline">Скоро буде розклад</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Devices -->
+      <div class="card-wrap c-red"
+        data-title="Devices"
+        data-desc="Консольні команди для підвищення FPS.
+
+fps_max 0
+mat_queue_mode 2
+r_dynamic 0
+r_drawtracers_firstperson 0
+func_break_max_pieces 0
+r_eyegloss 0
+r_eyemove 0
+
+Launch options:
+-novid -nojoy -fullscreen -tickrate 128 +fps_max 0">
+        <div class="card">
+          <div class="card-top">
+            <div class="card-labels">
+              <span class="card-title">Devices</span>
+              <span class="card-subtitle">Оптимізація</span>
+            </div>
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+          </div>
+          <div class="card-bottom">
+            <div class="card-value-label">Ціль FPS</div>
+            <div class="card-value">∞</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="modalTitle"></div>
+      <div id="modalBody"></div>
+      <button class="modal-close-btn" id="modalCloseBtn">Закрити</button>
+    </div>
+  </div>
+
+  </div><!-- /main-content -->
+
+  <script>
+    /* ── MODAL ── */
+    const overlay   = document.getElementById('modalOverlay');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody  = document.getElementById('modalBody');
+    const closeBtn   = document.getElementById('modalCloseBtn');
+
+    const donateHTML = `
+      <p class="donate-desc">Будь-яка сума допомагає покривати витрати на хостинг та розвиток проєкту. Дякую за підтримку 🙏</p>
+      <div class="donate-methods">
+        <a href="#" class="donate-btn" target="_blank" rel="noopener">
+          <div class="donate-btn-left">
+            <div class="donate-btn-icon" style="background:#f0fdf4;">💚</div>
+            <div><div class="donate-btn-label">Donatello</div><div class="donate-btn-sub">Картка · ПриватБанк / Монобанк</div></div>
+          </div>
+          <div class="donate-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </a>
+        <a href="#" class="donate-btn" target="_blank" rel="noopener">
+          <div class="donate-btn-left">
+            <div class="donate-btn-icon" style="background:#fff7ed;">🧡</div>
+            <div><div class="donate-btn-label">Patreon</div><div class="donate-btn-sub">Щомісячна підтримка</div></div>
+          </div>
+          <div class="donate-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </a>
+        <a href="#" class="donate-btn" target="_blank" rel="noopener">
+          <div class="donate-btn-left">
+            <div class="donate-btn-icon" style="background:#f0f9ff;">💎</div>
+            <div><div class="donate-btn-label">USDT (TRC-20)</div><div class="donate-btn-sub">Криптовалюта</div></div>
+          </div>
+          <div class="donate-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </a>
+      </div>`;
+
+    document.querySelectorAll('.card-wrap').forEach(card => {
+      card.addEventListener('click', () => {
+        modalTitle.textContent = card.dataset.title;
+        if (card.dataset.title === 'Donate') {
+          modalBody.innerHTML = donateHTML;
+        } else {
+          modalBody.innerHTML = '<div class="modal-content">' + card.dataset.desc.replace(/\n/g, '<br>') + '</div>';
+        }
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      });
+    });
+
+    function closeModal() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    closeBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+
+    /* ── HOVER CYCLE ANIMATION ── */
+    function setupCycle(cardId, labelId, valueId, params) {
+      const card  = document.getElementById(cardId);
+      const label = document.getElementById(labelId);
+      const value = document.getElementById(valueId);
+      let intervalTimer = null;
+      let delayTimer = null;
+      let idx = 0;
+
+      let animating = false;
+      let animEndTime = 0;
+
+      function animateTo(i) {
+        // track animation state
+        animating = true;
+        animEndTime = Date.now() + 560; // full cycle: 280ms out + 280ms in
+        setTimeout(() => { animating = false; }, 560);
+
+        // label — fade only
+        label.classList.add('label-fade');
+        setTimeout(() => {
+          label.textContent = params[i].label;
+          label.classList.remove('label-fade');
+        }, 250);
+
+        // value — drum: old exits UP, new enters from BELOW
+        value.style.transition = 'transform .28s cubic-bezier(.4,0,.2,1)';
+        value.style.transform = 'translateY(-110%)';
+        setTimeout(() => {
+          value.style.transition = 'none';
+          value.style.transform = 'translateY(110%)';
+          value.textContent = params[i].value;
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            value.style.transition = 'transform .28s cubic-bezier(.4,0,.2,1)';
+            value.style.transform = 'translateY(0)';
+          }));
+        }, 280);
+      }
+
+      card.addEventListener('mouseenter', () => {
+        delayTimer = setTimeout(() => {
+          idx = 1;
+          animateTo(idx);
+          intervalTimer = setInterval(() => {
+            idx = (idx + 1) % params.length;
+            animateTo(idx);
+          }, 1500);
+        }, 500);
+      });
+
+      card.addEventListener('mouseleave', () => {
+        clearTimeout(delayTimer);
+        clearInterval(intervalTimer);
+        if (idx !== 0) {
+          // wait until current animation finishes, then pause 500ms
+          const remaining = animating ? animEndTime - Date.now() : 0;
+          const wait = Math.max(0, remaining) + 500;
+          delayTimer = setTimeout(() => {
+            idx = 0;
+            animateTo(0);
+          }, wait);
+        }
+      });
+    }
+
+    setupCycle('vm-card', 'vm-label', 'vm-value', [
+      { label: 'FOV',       value: '68'   },
+      { label: 'OFFSET X',  value: '2.5'  },
+      { label: 'OFFSET Y',  value: '2.0'  },
+      { label: 'OFFSET Z',  value: '-2.0' },
+    ]);
+
+    setupCycle('ch-card', 'ch-label', 'ch-value', [
+      { label: 'LENGTH',    value: '1.0'  },
+      { label: 'THICKNESS', value: '1.0'  },
+      { label: 'GAP',       value: '-4.0' },
+      { label: 'OUTLINE',   value: '1.0'  },
+    ]);
+
+
+    /* ── ANTI-COPY PROTECTION ── */
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('selectstart', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      const k = e.key.toLowerCase();
+      if (e.ctrlKey && ['u','s','a','c'].includes(k)) e.preventDefault();
+      if (e.key === 'F12') e.preventDefault();
+    });
+    document.addEventListener('dragstart', e => e.preventDefault());
+
+    /* ── SPLASH ── */
+    function runSplash() {
+      const splash = document.getElementById('splash');
+      const main   = document.getElementById('main-content');
+      splash.classList.remove('hide', 'done');
+      main.classList.remove('visible');
+
+
+      setTimeout(() => {
+        splash.classList.add('hide');
+        main.classList.add('visible');
+        setTimeout(() => splash.classList.add('done'), 650);
+      }, 2000);
+    }
+
+    function restartSplash() {
+      const splash = document.getElementById('splash');
+      const main   = document.getElementById('main-content');
+      splash.classList.remove('hide', 'done');
+      main.classList.remove('visible');
+
+      splash.querySelectorAll('.splash-dot').forEach(d => {
+        d.style.animation = 'none';
+        requestAnimationFrame(() => { d.style.animation = ''; });
+      });
+      setTimeout(() => {
+        splash.classList.add('hide');
+        main.classList.add('visible');
+        setTimeout(() => splash.classList.add('done'), 650);
+      }, 2000);
+    }
+
+    runSplash();
+  </script>
+</body>
+</html>
