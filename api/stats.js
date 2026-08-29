@@ -1,24 +1,36 @@
 export default async function handler(req, res) {
-  // Дозволяємо твоєму сайту робити запити до цієї функції
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
 
-  // Твій SteamID64
-  const STEAM_ID = "76561199518063385"; 
+  const STEAM_ID = "76561198914407846";
+  const CSREP_URL = `https://csrep.gg/player/${STEAM_ID}`;
 
   try {
-    const response = await fetch(`https://steamcommunity.com/profiles/${STEAM_ID}/games/?tab=recent&l=ukrainian`);
-    const text = await response.text();
+    const response = await fetch(CSREP_URL, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
 
-    // Витягуємо години CS2 з коду сторінки Steam
-    const cs2Match = text.match(/"appid":730,[^}]*"hours_forever":"([^"]+)"/);
-
-    if (cs2Match && cs2Match[1]) {
-      return res.status(200).json({ hours: cs2Match[1] });
-    } else {
-      return res.status(404).json({ error: "Години CS2 не знайдено" });
+    if (!response.ok) {
+      return res.status(response.status).json({ error: `Помилка завантаження csrep.gg (${response.status})` });
     }
+
+    const html = await response.text();
+
+    // Шукаємо години на сторінці csrep.gg
+    // Зазвичай значення міститься у блоці статистики поруч із тегом "hrs" або "hours"
+    const hoursMatch = html.match(/([\d,.]+)\s*(?:hrs|hours|годин)/i) || html.match(/"hours":\s*"?([\d,.]+)"?/i);
+
+    if (hoursMatch && hoursMatch[1]) {
+      return res.status(200).json({ 
+        hours: hoursMatch[1],
+        source: "csrep.gg"
+      });
+    }
+
+    return res.status(404).json({ error: "Не вдалося витягнути години з csrep.gg" });
   } catch (error) {
-    return res.status(500).json({ error: "Помилка сервера" });
+    return res.status(500).json({ error: "Помилка сервера при запиті до csrep.gg" });
   }
 }
