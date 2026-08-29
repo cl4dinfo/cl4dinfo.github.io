@@ -310,7 +310,7 @@
     <div class="grid">
 
       <!-- About Me — featured -->
-      <div class="card-wrap c-blue card-featured"
+      <div class="card-wrap card-featured" id="am-card"
         data-title="About Me"
         data-desc="Привіт! Я гравець у CS2, який цікавиться налаштуваннями гри, серверами та мап-дизайном.
 
@@ -335,14 +335,14 @@ ELO: 5 430
             </div>
           </div>
           <div class="card-bottom">
-            <div class="card-value-label">ELO</div>
-            <div class="card-value">5430</div>
+            <div class="card-value-label" id="am-label">ELO</div>
+            <div class="card-value"><span class="card-value-inner" id="am-value">5430</span></div>
           </div>
         </div>
       </div>
 
       <!-- Binds -->
-      <div class="card-wrap c-orange"
+      <div class="card-wrap"
         data-title="Binds"
         data-desc='Прив'"'"'язка дій до клавіш.
 
@@ -377,7 +377,7 @@ bind "c" "use weapon_decoy"
       </div>
 
       <!-- ViewModel -->
-      <div class="card-wrap c-blue" id="vm-card"
+      <div class="card-wrap" id="vm-card"
         data-title="ViewModel"
         data-desc="Налаштування положення зброї в руках гравця.
 
@@ -409,7 +409,7 @@ viewmodel_offset_z -2.0
       </div>
 
       <!-- Donate -->
-      <div class="card-wrap c-yellow"
+      <div class="card-wrap"
         data-title="Donate"
         data-desc="Підтримай розвиток проєкту та сервера.
 
@@ -440,7 +440,7 @@ viewmodel_offset_z -2.0
       </div>
 
       <!-- Crosshair -->
-      <div class="card-wrap c-teal" id="ch-card"
+      <div class="card-wrap" id="ch-card"
         data-title="Crosshair"
         data-desc="Налаштування прицілу.
 
@@ -513,7 +513,7 @@ cl_crosshairalpha 255
       </div>
 
       <!-- Devices -->
-      <div class="card-wrap c-red"
+      <div class="card-wrap" id="dev-card"
         data-title="Devices"
         data-desc="Консольні команди для підвищення FPS.
 
@@ -542,8 +542,8 @@ Launch options:
             </div>
           </div>
           <div class="card-bottom">
-            <div class="card-value-label">Ціль FPS</div>
-            <div class="card-value">∞</div>
+            <div class="card-value-label" id="dev-label">RYZEN</div>
+            <div class="card-value"><span class="card-value-inner" id="dev-value">5</span></div>
           </div>
         </div>
       </div>
@@ -682,11 +682,22 @@ Launch options:
       });
     }
 
+    setupCycle('am-card', 'am-label', 'am-value', [
+      { label: 'ELO',   value: '5430' },
+      { label: 'HOURS', value: '1467' },
+    ]);
+
     setupCycle('vm-card', 'vm-label', 'vm-value', [
       { label: 'FOV',       value: '68'   },
       { label: 'OFFSET X',  value: '2.5'  },
       { label: 'OFFSET Y',  value: '2.0'  },
       { label: 'OFFSET Z',  value: '-2.0' },
+    ]);
+
+    setupCycle('dev-card', 'dev-label', 'dev-value', [
+      { label: 'RYZEN',  value: '5'    },
+      { label: 'NVIDIA', value: '4060' },
+      { label: 'RAM',    value: '32'   },
     ]);
 
     setupCycle('ch-card', 'ch-label', 'ch-value', [
