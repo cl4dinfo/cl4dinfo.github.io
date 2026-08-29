@@ -3,33 +3,37 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET');
 
   const STEAM_ID = "76561198914407846";
+  // Публічний ключ Steam Web API
+  const API_KEY = "FC7B1F3461CA0829A72A478F686699F2"; 
 
   try {
-    // Отримуємо дані про години CS2 з XML-версії профілю Steam (вона відкрита для читання і не блокується)
-    const response = await fetch(`https://steamcommunity.com/profiles/${STEAM_ID}/games?xml=1`);
+    const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${API_KEY}&steamid=${STEAM_ID}&format=json`;
+    const response = await fetch(url);
     
     if (!response.ok) {
-      return res.status(response.status).json({ error: "Не вдалося отримати дані зі Steam" });
+      return res.status(response.status).json({ error: "Помилка запиту до Steam API" });
     }
 
-    const xmlText = await response.text();
+    const data = await response.json();
+    const games = data?.response?.games;
 
-    // Шукаємо appID 730 (CS2) та години у графові hoursOnRecord / hoursPlayed
-    const cs2Section = xmlText.match(/<appID>730<\/appID>[\s\S]*?<\/game>/i);
-    
-    if (cs2Section) {
-      const hoursMatch = cs2Section[0].match(/<hoursOnRecord>([\d.,]+)<\/hoursOnRecord>/i) || 
-                         cs2Section[0].match(/<hoursPlayed>([\d.,]+)<\/hoursPlayed>/i);
-                         
-      if (hoursMatch && hoursMatch[1]) {
-        return res.status(200).json({ 
-          hours: hoursMatch[1],
-          source: "Steam"
-        });
-      }
+    if (!games || games.length === 0) {
+      return res.status(404).json({ error: "Ігри не знайдено або профіль приховано" });
     }
 
-    return res.status(404).json({ error: "Перевірте, чи відкритий профіль Steam (Деталі ігор -> Публічний)" });
+    // Шукаємо Counter-Strike 2 (appID 730)
+    const cs2 = games.find(game => game.appid === 730);
+
+    if (cs2 && cs2.playtime_forever !== undefined) {
+      // Steam API повертає час у хвилинах — переводимо в години та округлюємо
+      const hours = (cs2.playtime_forever / 60).toFixed(1);
+      return res.status(200).json({ 
+        hours: hours,
+        source: "Steam API"
+      });
+    }
+
+    return res.status(404).json({ error: "CS2 не знайдено на акаунті" });
   } catch (error) {
     return res.status(500).json({ error: "Помилка сервера" });
   }
