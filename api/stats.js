@@ -3,34 +3,34 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET');
 
   const STEAM_ID = "76561198914407846";
-  const CSREP_URL = `https://csrep.gg/player/${STEAM_ID}`;
 
   try {
-    const response = await fetch(CSREP_URL, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
-
+    // Отримуємо дані про години CS2 з XML-версії профілю Steam (вона відкрита для читання і не блокується)
+    const response = await fetch(`https://steamcommunity.com/profiles/${STEAM_ID}/games?xml=1`);
+    
     if (!response.ok) {
-      return res.status(response.status).json({ error: `Помилка завантаження csrep.gg (${response.status})` });
+      return res.status(response.status).json({ error: "Не вдалося отримати дані зі Steam" });
     }
 
-    const html = await response.text();
+    const xmlText = await response.text();
 
-    // Шукаємо години на сторінці csrep.gg
-    // Зазвичай значення міститься у блоці статистики поруч із тегом "hrs" або "hours"
-    const hoursMatch = html.match(/([\d,.]+)\s*(?:hrs|hours|годин)/i) || html.match(/"hours":\s*"?([\d,.]+)"?/i);
-
-    if (hoursMatch && hoursMatch[1]) {
-      return res.status(200).json({ 
-        hours: hoursMatch[1],
-        source: "csrep.gg"
-      });
+    // Шукаємо appID 730 (CS2) та години у графові hoursOnRecord / hoursPlayed
+    const cs2Section = xmlText.match(/<appID>730<\/appID>[\s\S]*?<\/game>/i);
+    
+    if (cs2Section) {
+      const hoursMatch = cs2Section[0].match(/<hoursOnRecord>([\d.,]+)<\/hoursOnRecord>/i) || 
+                         cs2Section[0].match(/<hoursPlayed>([\d.,]+)<\/hoursPlayed>/i);
+                         
+      if (hoursMatch && hoursMatch[1]) {
+        return res.status(200).json({ 
+          hours: hoursMatch[1],
+          source: "Steam"
+        });
+      }
     }
 
-    return res.status(404).json({ error: "Не вдалося витягнути години з csrep.gg" });
+    return res.status(404).json({ error: "Перевірте, чи відкритий профіль Steam (Деталі ігор -> Публічний)" });
   } catch (error) {
-    return res.status(500).json({ error: "Помилка сервера при запиті до csrep.gg" });
+    return res.status(500).json({ error: "Помилка сервера" });
   }
 }
